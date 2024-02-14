@@ -1,19 +1,19 @@
 # VAN_PROJECT
 
 ## 온라인 프로세스 (ora19c 내부파일들)
-Cent-OS 7 
-리눅스 기반
-client, server, batch 구현
-Pro*C사용
+-Cent-OS 7 
+-리눅스 기반
+-client, server, batch 구현
+-Pro*C사용
 
 ## 백오피스 (Back_Office_Export)
-STS 3 사용
-My-batis 사용
-jstl 사용
+-STS 3 사용
+-My-batis 사용
+-jstl 사용
 
 ## DB (admin)
-oracle 사용
-리스너 셋팅 후 윈도우(client) <-> 리눅스(server)
+-oracle 사용
+-리스너 셋팅 후 윈도우(client) <-> 리눅스(server)
 
 ## 흐름
 백오피스에서 단말기, 카드 BIN 등록
