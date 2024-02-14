@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+<mapper namespace="binMapper">
+	<resultMap id="binResult" type="CardBin">
+		<result column="CARD_BIN" property="cardBin" />
+		<result column="CARD_DIF" property="cardDif" />
+		<result column="CARD_STATUS" property="cardStatus" />
+	</resultMap>
+	
+	<!-- BIN 검색 -->
+	<select id="searchCardBin" resultMap="binResult">
+		SELECT 
+			B.CARD_BIN
+			,B.CARD_DIF
+			,B.CARD_STATUS
+		FROM 
+			TBL_CARD_BIN B
+		WHERE 1=1
+			<if test="cardBin != null and cardBin != ''">
+				AND B.CARD_BIN = #{cardBin}
+			</if>
+			<if test="cardDif != null  and cardDif != ''">
+				AND B.CARD_DIF = #{cardDif}
+			</if>
+			<if test="cardStatus != null and cardStatus != ''">
+				AND B.CARD_STATUS = #{cardStatus}
+			</if>
+		ORDER BY CARD_BIN
+	</select>
+	
+		<!-- BIN 등록 -->
+	<insert id="insertCardBin">
+	    INSERT 
+	      INTO 
+	  			TBL_CARD_BIN B
+	    		(
+	    		  B.CARD_BIN
+	    		  ,B.CARD_DIF
+	    		  ,B.CARD_STATUS
+	    		)
+	    VALUES 
+	    		(#{cardBin}
+	    		 ,#{cardDif}
+	    		 ,#{cardStatus}
+	    		 )	 
+	</insert>
+	
+		<!-- BIN 수정  --> 	
+  	<update id="updateCardBin">
+  		UPDATE 
+  				TBL_CARD_BIN B
+  		   SET
+  		   		B.CARD_DIF = #{cardDif},
+	            B.CARD_STATUS = #{cardStatus}
+	     WHERE
+	     		B.CARD_BIN = #{cardBin}
+
+  	</update>
+	
+	<!-- BIN 삭제 -->
+  	<delete id="deleteCardBin">
+  		DELETE 
+  		  FROM
+  		  		TBL_CARD_BIN
+  		 WHERE
+  		 		CARD_BIN = #{cardBin}
+  	</delete>
+	
+		<!-- BIN 총계 -->
+	<select id="searchCount"  resultType="_int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			TBL_CARD_BIN B
+		WHERE 1=1
+			<if test="cardBin != null and cardBin != ''">
+				AND B.CARD_BIN = #{cardBin}
+			</if>
+			<if test="cardDif != null  and cardDif != ''">
+				AND B.CARD_DIF = #{cardDif}
+			</if>
+			<if test="cardStatus != null and cardStatus != ''">
+				AND B.CARD_STATUS = #{cardStatus}
+			</if>
+	</select>
+	
+</mapper>

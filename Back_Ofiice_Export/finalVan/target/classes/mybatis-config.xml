@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "mybatis-3-config.dtd" >
+<configuration>
+
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+	</settings>
+	<typeAliases>
+		<typeAlias type="com.twin.van.terminal.model.vo.Terminal" alias="Terminal" />
+		<typeAlias type="com.twin.van.tran.model.vo.Tran" alias="Tran" />
+		<typeAlias type="com.twin.van.cardbin.model.vo.CardBin" alias="CardBin" />
+	</typeAliases>
+
+	<mappers>
+		<mapper resource="/mapper/term-mapper.xml" />
+		<mapper resource="/mapper/tran-mapper.xml" />
+		<mapper resource="/mapper/bin-mapper.xml" />
+	</mappers>
+</configuration>

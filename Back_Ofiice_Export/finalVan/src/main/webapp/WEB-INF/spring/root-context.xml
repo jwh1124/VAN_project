@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<bean class="org.apache.commons.dbcp.BasicDataSource" id= "dataSource" destroy-method="close">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+		<property name="url" value ="jdbc:oracle:thin:@localhost:1521:source"/>
+		<property name="username" value="twin"/>
+		<property name="password" value="twin1234"/>
+	</bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionFactoryBean" id= "sqlSessionFactory">
+		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	 <bean class="org.mybatis.spring.SqlSessionTemplate" id = "sqlSession">
+	 	<constructor-arg ref="sqlSessionFactory"/> <!-- 생성자 만드는중 -->
+	 </bean>
+
+	 <!-- 파일 업로드 관련 빈 등록 -->
+	 <bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id ="multipartResolver">
+	 	<property name="maxUploadSize" value="100000000"/>
+	 	<property name="maxInMemorySize" value="100000000"/>
+	 </bean>
+	 
+	 
+</beans>

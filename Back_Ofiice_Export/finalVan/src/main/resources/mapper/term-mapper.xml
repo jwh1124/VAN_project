@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+<mapper namespace="termMapper">
+	<resultMap id="terminalResult" type="Terminal">
+		<result column="TERM_NUM" property="termNum" />
+		<result column="BIS_NUM" property="bisNum" />
+		<result column="TERM_OPEN_DATE" property="termOpenDate" />
+		<result column="TERM_CLOSE_DATE" property="termCloseDate" />
+		<result column="TERM_STATUS" property="termStatus" />
+	</resultMap>
+
+	<!-- 단말기 검색 -->
+	<select id="searchTerm" resultMap="terminalResult">
+		SELECT 
+			T.TERM_NUM
+			,T.BIS_NUM
+			,T.TERM_OPEN_DATE
+			,T.TERM_CLOSE_DATE
+			,T.TERM_STATUS
+		FROM 
+			TBL_TERM T
+		WHERE 1=1
+			<if test="termNum != null and termNum != ''">
+				AND T.TERM_NUM = #{termNum}
+			</if>
+			<if test="bisNum != null  and bisNum != ''">
+				AND T.BIS_NUM = #{bisNum}
+			</if>
+			<if test="termStatus != null and termStatus != ''">
+				AND T.TERM_STATUS = #{termStatus}
+			</if>
+		ORDER BY TERM_NUM	
+	</select>
+	
+	<!-- 단말기 등록 -->
+	<insert id="insertTerm">
+	    INSERT 
+	      INTO 
+	  			TBL_TERM T
+	    		(
+	    		  T.TERM_NUM
+	    		, T.BIS_NUM
+	    		, T.TERM_OPEN_DATE
+	    		, T.TERM_STATUS
+	    		)
+	    VALUES 
+	    		(#{termNum}
+	    		 ,#{bisNum}
+	    		 ,#{termOpenDate}
+	    		 ,#{termStatus}
+	    		 )	 
+	</insert>
+	
+	<!-- 단말기 수정  --> 	
+  	<update id="updateTerm">
+  		UPDATE 
+  				TBL_TERM T
+  		   SET
+  		   		T.BIS_NUM = #{bisNum},
+	            T.TERM_OPEN_DATE = #{termOpenDate},
+	            <choose>
+	            	<when test="termCloseDate != null and termCloseDate != ''">
+	            	T.TERM_CLOSE_DATE = #{termCloseDate},
+	            	</when>
+	            	<otherwise>
+	            	T.TERM_CLOSE_DATE = '',
+	            	</otherwise>
+	            </choose>
+	            T.TERM_STATUS = #{termStatus}
+	     WHERE
+	     		TERM_NUM = #{termNum}
+
+  	</update>
+  	
+	<!-- 단말기 삭제 -->
+  	<delete id="deleteTerm">
+  		DELETE 
+  		  FROM
+  		  		TBL_TERM
+  		 WHERE
+  		 		TERM_NUM = #{termNum}
+  	</delete>
+	
+		<!-- 단말기 총계 -->
+	<select id="searchCount"  resultType="_int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			TBL_TERM T
+		WHERE 1=1
+			<if test="termNum != null and termNum != ''">
+				AND T.TERM_NUM = #{termNum}
+			</if>
+			<if test="bisNum != null  and bisNum != ''">
+				AND T.BIS_NUM = #{bisNum}
+			</if>
+			<!--
+			<if test="termOpenDate != null and termOpenDate != ''">
+				AND T.TERM_OPEN_DATE = #{termOpenDate}
+			</if>
+			<if test="termCloseDate != null and termCloseDate != ''">
+				AND T.TERM_CLOSE_DATE = #{termCloseDate}
+			</if>
+			 -->
+			<if test="termStatus != null and termStatus != ''">
+				AND T.TERM_STATUS = #{termStatus}
+			</if>
+	</select>
+	
+
+
+</mapper>

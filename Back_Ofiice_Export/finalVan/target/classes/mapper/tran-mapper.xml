@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+<mapper namespace="tranMapper">
+	<resultMap id="tranResult" type="Tran">
+		<result column="TRAN_UNIQ_NUM" property="tranUniqNum" />
+		<result column="TRAN_DATE" property="tranDate" />
+		<result column="TERM_NUM" property="termNum" />
+		<result column="TRAN_NUM" property="tranNum" />
+		<result column="TRAN_TYPE" property="tranType" />
+		<result column="CARD_INFO" property="cardInfo" />
+		<result column="APPROVE_AMT" property="approveAmt" />
+		<result column="INST_MON" property="instMon" />
+		<result column="APPROVE_NUM" property="approveNum" />
+		<result column="RES_CODE" property="resCode" />
+		<result column="RES_MSG" property="resMsg" />
+		<result column="TRAN_ORG_DATE" property="tranOrgDate" />
+		<result column="CANCLE" property="cancle" />
+		<result column="APPROVE_ORG_NUM" property="approveOrgNum" />
+	</resultMap>
+
+	<select id="searchTranList" resultMap="tranResult">
+		SELECT 
+		*
+		FROM
+		(
+		SELECT/*+ INDEX_DESC(R P1) */
+		R.TRAN_UNIQ_NUM
+		,R.TRAN_DATE
+		,R.TERM_NUM
+		,R.TRAN_NUM
+		,R.TRAN_TYPE
+		,R.CARD_INFO
+		,R.APPROVE_AMT
+		,R.INST_MON
+		,R.APPROVE_NUM
+		,R.RES_CODE
+		,R.RES_MSG
+		,R.TRAN_ORG_DATE
+		,R.CANCLE
+		,R.APPROVE_ORG_NUM
+		FROM
+		TBL_TLF_ON R
+		WHERE 1=1
+		<if test="today != null and today != ''">
+			AND R.TRAN_DATE = #{today}
+		</if>
+		<if test="termNum != null and termNum != ''">
+			AND R.TERM_NUM = #{termNum}
+		</if>
+		<if test="tranNum != null and tranNum != ''">
+			AND R.TRAN_NUM = #{tranNum}
+		</if>
+		<if test="cardNum != null and cardNum != ''">
+			AND SUBSTR(R.CARD_INFO, 1, 16) = #{cardNum}
+		</if>
+		<if test="tranStartAmt != null  and tranStartAmt != '' and tranEndAmt != null and tranEndAmt != ''">
+			AND R.APPROVE_AMT BETWEEN #{tranStartAmt} AND #{tranEndAmt}
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND R.RES_CODE = #{resCode}
+		</if>
+		UNION ALL
+		SELECT/*+ INDEX_DESC(B P1) */
+		B.TRAN_UNIQ_NUM
+		,B.TRAN_DATE
+		,B.TERM_NUM
+		,B.TRAN_NUM
+		,B.TRAN_TYPE
+		,B.CARD_INFO
+		,B.APPROVE_AMT
+		,B.INST_MON
+		,B.APPROVE_NUM
+		,B.RES_CODE
+		,B.RES_MSG
+		,B.TRAN_ORG_DATE
+		,B.CANCLE
+		,B.APPROVE_ORG_NUM
+		FROM
+		TBL_TLF_BATCH B
+		WHERE 1=1
+		<if test="tranStartDate != null and tranStartDate != '' and tranEndDate != null and tranEndDate != ''">
+			AND B.TRAN_DATE BETWEEN #{tranStartDate} AND #{tranEndDate}
+		</if>
+		<if test="termNum != null and termNum != ''">
+			AND B.TERM_NUM = #{termNum}
+		</if>
+		<if test="tranNum != null and tranNum != ''">
+			AND B.TRAN_NUM = #{tranNum}
+		</if>
+		<if test="cardNum != null and cardNum != ''">
+			AND SUBSTR(B.CARD_INFO, 1, 16) = #{cardNum}
+		</if>
+		<if test="tranStartAmt != null  and tranStartAmt != '' and tranEndAmt != null and tranEndAmt != ''">
+			AND B.APPROVE_AMT BETWEEN #{tranStartAmt} AND #{tranEndAmt}
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND B.RES_CODE = #{resCode}
+		</if>
+		)
+		ORDER BY TRAN_UNIQ_NUM DESC
+	</select>
+	
+	
+	
+	<select id="searchCount" resultType="_int">
+	SELECT COUNT(*) FROM
+	(
+		SELECT
+		R.TRAN_UNIQ_NUM
+		,R.TRAN_DATE
+		,R.TERM_NUM
+		,R.TRAN_NUM
+		,R.TRAN_TYPE
+		,R.CARD_INFO
+		,R.APPROVE_AMT
+		,R.INST_MON
+		,R.APPROVE_NUM
+		,R.RES_CODE
+		,R.RES_MSG
+		,R.TRAN_ORG_DATE
+		,R.CANCLE
+		,R.APPROVE_ORG_NUM
+		FROM
+		TBL_TLF_ON R
+		WHERE 1=1
+		<if test="today != null and today != ''">
+			AND R.TRAN_DATE = #{today}
+		</if>
+		<if test="termNum != null and termNum != ''">
+			AND R.TERM_NUM = #{termNum}
+		</if>
+		<if test="tranNum != null and tranNum != ''">
+			AND R.TRAN_NUM = #{tranNum}
+		</if>
+		<if test="cardNum != null and cardNum != ''">
+			AND SUBSTR(R.CARD_INFO, 1, 16) = #{cardNum}
+		</if>
+		<if test="tranStartAmt != null and tranStartAmt != '' and tranEndAmt != null and tranEndAmt != ''">
+			AND R.APPROVE_AMT BETWEEN #{tranStartAmt} AND #{tranEndAmt}
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND R.RES_CODE = #{resCode}
+		</if>
+		UNION ALL
+		SELECT
+		B.TRAN_UNIQ_NUM
+		,B.TRAN_DATE
+		,B.TERM_NUM
+		,B.TRAN_NUM
+		,B.TRAN_TYPE
+		,B.CARD_INFO
+		,B.APPROVE_AMT
+		,B.INST_MON
+		,B.APPROVE_NUM
+		,B.RES_CODE
+		,B.RES_MSG
+		,B.TRAN_ORG_DATE
+		,B.CANCLE
+		,B.APPROVE_ORG_NUM
+		FROM
+		TBL_TLF_BATCH B
+		WHERE 1=1
+		<if test="tranStartDate != null and tranStartDate != '' and tranEndDate != null and tranEndDate != ''">
+			AND B.TRAN_DATE BETWEEN #{tranStartDate} AND #{tranEndDate}
+		</if>
+		<if test="termNum != null and termNum != ''">
+			AND B.TERM_NUM = #{termNum}
+		</if>
+		<if test="tranNum != null and tranNum != ''">
+			AND B.TRAN_NUM = #{tranNum}
+		</if>
+		<if test="cardNum != null and cardNum != ''">
+			AND SUBSTR(B.CARD_INFO, 1, 16) = #{cardNum}
+		</if>
+		<if test="tranStartAmt != null and tranStartAmt != '' and tranEndAmt != null and tranEndAmt != ''">
+			AND B.APPROVE_AMT BETWEEN #{tranStartAmt} AND #{tranEndAmt}
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND B.RES_CODE = #{resCode}
+		</if>
+	)
+	</select>
+</mapper>
