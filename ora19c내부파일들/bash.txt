@@ -1,0 +1,29 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+# User specific environment and startup programs
+
+PATH=$PATH:$HOME/.local/bin:$HOME/bin
+
+export PATH
+#. /home/oracle/scripts/setEnv.sh
+export TMP=/tmp
+export TMPDIR=$TMP
+
+#export ORACLE_HOSTNAME=ol7-19.localdomain
+export ORACLE_UNQNAME=ORAORA
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_HOME=/u01/app
+#export ORA_INVENTORY=/u01/app/oraInventory
+export ORACLE_SID=source
+export DATA_DIR=/u02/oradata
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+
+export PATH=/usr/sbin:/usr/local/bin:$PATH
+export PATH=$ORACLE_HOME/bin:$PATH
+
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/usr/lib:/lib:/usr/local/lib:$LD_LIBRARY_PATH
+export CLASSPATH=$ORACLE_HOME/jlib:/$ORACLE_HOME/rdbms/jlib

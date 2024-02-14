@@ -1,0 +1,229 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <string.h>
+#include <time.h>
+#include <sqlca.h>
+#include <sqlda.h>
+#include <sqlcpr.h>
+
+#define SUCCESS 0	  // SUCCESS 상수
+#define FAIL -1		  // FAIL 상수
+#define MEM_ZERO 0x00 // memset 초기화 상수
+#define RE_ZERO 0
+
+typedef struct sqlTelegram // 전문 구조체 선언
+{
+	char tranUniqNum[16 + 1];	// 거래 고유번호
+	char tranDate[8 + 1];		// 거래일자 8 N
+	char termNum[10 + 1];		// 단말기번호 10 N
+	char tranNum[8 + 1];		// 거래 일련번호 8 N
+	char tranType[2 + 1];		// 거래종류 2 N
+	char cardInfo[37 + 1];		// 카드정보 A
+	char approveAmt[10 + 1];	// 승인요청금액 10N
+	char instMon[2 + 1];		// 할부 개월수 2 N
+	char approveNum[15 + 1];	// 승인번호 AN
+	char resCode[4 + 1];		// 응답 코드 AN
+	char resMsg[64 + 1];		// 응답 메세지 AN
+	char tranOrgDate[8 + 1];	// 원거래 일자 AN
+	char cancle[2 + 1];			// 취소구분
+	char approveOrgNum[15 + 1]; // 원승인번호
+} sqlTel;
+
+sqlTel sqlStruct;
+
+int tranInsertSqlQuery(char *TranUniqNum, char *TranDate, char *TermNum, char *TranNum, char *TranType,
+					   char *CardInfo, char *ApproveAmt, char *InstMon, char *ApproveNum, char *ResCode,
+					   char *ResMsg, char *TranOrgDate, char *Cancle, char *ApproveOrgNum);
+void DbReleaseFunc();
+void resetStruct();
+
+time_t rawTime;		  // 현재 시간 받아오는 변수
+struct tm *pTimeInfo; // 시간을 사람이 보기 쉽게 변환하는 구조체
+
+int main(int argc, char *argv[])
+{
+	char sSqlBuff[512];
+	char sID[62];
+	char spwd[62];
+	int nReadCnt;
+	int nDupleCnt = RE_ZERO;
+	int nRetCode = SUCCESS;
+	char sHistTranDate[8 + 1];
+
+	memset(sID, MEM_ZERO, sizeof(sID));
+	memset(spwd, MEM_ZERO, sizeof(spwd));
+	strcpy(sID, "twin");
+	strcpy(spwd, "twin1234");
+	memset(sSqlBuff, MEM_ZERO, sizeof(sSqlBuff));
+	sprintf(sSqlBuff, "%s/%s", sID, spwd);
+
+	if (argc != 2) // 파일명 & port번호
+	{
+		printf("Usage : %s <DATE>\n", argv[0]);
+		exit(1);
+	}
+
+	resetStruct();
+
+	EXEC SQL CONNECT : sSqlBuff;
+
+	if (sqlca.sqlcode != SUCCESS)
+	{
+		printf("DB CON Error \n");
+	}
+	else
+	{
+		printf("DB CON SUCCESS\n");
+	}
+	memset(sSqlBuff, MEM_ZERO, sizeof(sSqlBuff));
+
+	memset(sHistTranDate, MEM_ZERO, sizeof(sHistTranDate));
+	strcpy(sHistTranDate, argv[1]);
+
+	rawTime = time(NULL);			 // 현재 시간 받기
+	pTimeInfo = localtime(&rawTime); // 현재 시간 struct로 변환
+
+	sprintf(sSqlBuff, "SELECT \n"
+					  "TRAN_UNIQ_NUM, TRAN_DATE, TERM_NUM, TRAN_NUM, TRAN_TYPE, CARD_INFO, APPROVE_AMT, \n"
+					  "INST_MON, APPROVE_NUM, RES_CODE, RES_MSG, TRAN_ORG_DATE, CANCLE, APPROVE_ORG_NUM \n"
+					  "FROM TBL_TLF_ON WHERE TRAN_DATE = :sHistTranDate");
+
+	EXEC SQL PREPARE SELECT_SMT FROM : sSqlBuff;
+	if (sqlca.sqlcode != 0)
+	{
+		printf("EXEC SQL PREPARE ERROR [%s] [%d] \n", sSqlBuff,
+			   sqlca.sqlcode);
+		return -1;
+	}
+
+	EXEC SQL DECLARE SELECT_CURSOR CURSOR FOR SELECT_SMT;
+	if (sqlca.sqlcode != 0)
+	{
+		printf("EXEC SQL DECLARE ERROR [%s] [%D] \n", sSqlBuff,
+			   sqlca.sqlcode);
+		return -1;
+	}
+
+	EXEC SQL OPEN SELECT_CURSOR USING : sHistTranDate;
+	if (sqlca.sqlcode != 0)
+	{
+		printf("EXEC SQL OPEN ERROR [%s] [%d] \n", sSqlBuff,
+			   sqlca.sqlcode);
+		return -1;
+	}
+
+	while (1)
+	{
+
+		EXEC SQL FETCH SELECT_CURSOR INTO : sqlStruct.tranUniqNum, : sqlStruct.tranDate, : sqlStruct.termNum, : sqlStruct.tranNum, : sqlStruct.tranType, : sqlStruct.cardInfo, : sqlStruct.approveAmt, : sqlStruct.instMon, : sqlStruct.approveNum, : sqlStruct.resCode, : sqlStruct.resMsg, : sqlStruct.tranOrgDate, : sqlStruct.cancle, : sqlStruct.approveOrgNum;
+
+		if (sqlca.sqlcode == 1403)
+		{
+			if (nReadCnt == 0)
+			{
+				printf("Don't Have Target Data\n");
+			}
+			nRetCode = 0;
+			break;
+		}
+
+		nReadCnt = nReadCnt + 1;
+
+		nRetCode = tranInsertSqlQuery(sqlStruct.tranUniqNum, sqlStruct.tranDate, sqlStruct.termNum,
+									  sqlStruct.tranNum, sqlStruct.tranType, sqlStruct.cardInfo,
+									  sqlStruct.approveAmt, sqlStruct.instMon, sqlStruct.approveNum,
+									  sqlStruct.resCode, sqlStruct.resMsg, sqlStruct.tranOrgDate,
+									  sqlStruct.cancle, sqlStruct.approveOrgNum);
+		if (nRetCode != SUCCESS)
+		{
+			nDupleCnt = nDupleCnt + 1;
+		}
+	} /* end of while(1) */
+
+	if (nReadCnt - nDupleCnt > 0)
+	{
+		printf("Batch Counts : ' %d ' SUCCESS\n", nReadCnt - nDupleCnt);
+	}
+	else
+	{
+		printf("Fail Counts : ' %d ' FAIL \n",nDupleCnt);
+	}
+
+	/*-- EXEC SQL DECLARE 구문에서 선언한 이름과 일치해야 함 --*/
+	EXEC SQL CLOSE SELECT_CURSOR;
+
+	DbReleaseFunc();
+
+	return nRetCode;
+}
+
+int tranInsertSqlQuery(char *TranUniqNum, char *TranDate, char *TermNum, char *TranNum, char *TranType, char *CardInfo, char *ApproveAmt, char *InstMon, char *ApproveNum, char *ResCode, char *ResMsg, char *TranOrgDate, char *Cancle, char *ApproveOrgNum)
+{
+
+	char sTmpBuff[1024 + 1];
+	int nRetCode;
+	memset(sTmpBuff, MEM_ZERO, sizeof(sTmpBuff));
+
+	sprintf(sTmpBuff, "INSERT INTO TBL_TLF_BATCH \n"
+					  "(TRAN_UNIQ_NUM, TRAN_DATE, TERM_NUM, TRAN_NUM, TRAN_TYPE, CARD_INFO, APPROVE_AMT, \n"
+					  "INST_MON, APPROVE_NUM, RES_CODE, RES_MSG, TRAN_ORG_DATE, CANCLE, APPROVE_ORG_NUM) \n"
+					  " VALUES \n"
+					  "(:TranUniqNum, : TranDate, :TermNum, :TranNum, :TranType, :CardInfo, \n"
+					  " :ApproveAmt, :InstMon, :ApproveNum, :ResCode, :ResMsg, :TranOrgDate, :Cancle, :ApproveOrgNum)");
+
+	EXEC SQL PREPARE insert_smt FROM : sTmpBuff;
+
+	if (sqlca.sqlcode != SUCCESS)
+	{
+		printf(" INSERT PREPARE ERROR [%d] \n", sqlca.sqlcode);
+		nRetCode = FAIL;
+	}
+
+	EXEC SQL EXECUTE insert_smt USING : TranUniqNum, : TranDate, : TermNum, : TranNum, : TranType, : CardInfo, : ApproveAmt, : InstMon, : ApproveNum, : ResCode, : ResMsg, : TranOrgDate, : Cancle, : ApproveOrgNum;
+
+	if (sqlca.sqlcode != SUCCESS)
+	{
+		if(sqlca.sqlcode == -1)
+		{
+		
+		}
+		else
+		{
+			printf("INSERT EXECUTE Error! [%d] \n", sqlca.sqlcode);
+		}
+
+		EXEC SQL ROLLBACK WORK;
+		nRetCode = FAIL;
+	}
+	else
+	{
+		EXEC SQL COMMIT WORK;
+	}
+	return nRetCode;
+}
+
+void DbReleaseFunc()
+{
+	EXEC SQL COMMIT WORK RELEASE;
+}
+
+void resetStruct() // 구조체 초기화 함수
+{
+	memset(sqlStruct.tranUniqNum, MEM_ZERO, sizeof(sqlStruct.tranUniqNum));
+	memset(sqlStruct.tranDate, MEM_ZERO, sizeof(sqlStruct.tranDate));
+	memset(sqlStruct.termNum, MEM_ZERO, sizeof(sqlStruct.termNum));
+	memset(sqlStruct.tranNum, MEM_ZERO, sizeof(sqlStruct.tranNum));
+	memset(sqlStruct.tranType, MEM_ZERO, sizeof(sqlStruct.tranType));
+	memset(sqlStruct.cardInfo, MEM_ZERO, sizeof(sqlStruct.cardInfo));
+	memset(sqlStruct.approveAmt, MEM_ZERO, sizeof(sqlStruct.approveAmt));
+	memset(sqlStruct.instMon, MEM_ZERO, sizeof(sqlStruct.instMon));
+	memset(sqlStruct.approveNum, MEM_ZERO, sizeof(sqlStruct.approveNum));
+	memset(sqlStruct.resCode, MEM_ZERO, sizeof(sqlStruct.resCode));
+	memset(sqlStruct.resMsg, MEM_ZERO, sizeof(sqlStruct.resMsg));
+	memset(sqlStruct.tranOrgDate, MEM_ZERO, sizeof(sqlStruct.tranOrgDate));
+	memset(sqlStruct.cancle, MEM_ZERO, sizeof(sqlStruct.cancle));
+	memset(sqlStruct.approveOrgNum, MEM_ZERO, sizeof(sqlStruct.approveOrgNum));
+}
